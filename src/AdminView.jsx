@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
-import { ref, set } from "firebase/database";
+import { ref, set, push } from "firebase/database";
 
 // ── Helpers ──────────────────────────────
 function pad(n) { return String(n).padStart(2, "0"); }
@@ -58,20 +58,33 @@ export default function AdminView() {
   const toastT = useRef(null);
 
   // Guarda en Firebase
-  function push(data) { set(ref(db, "partido"), data); }
+  function pushMatch(data) { set(ref(db, "partido"), data); }
+
+  // Guarda el resultado final en el historial (para la tabla de posiciones)
+  function guardarEnHistorial() {
+    const historialRef = ref(db, "historial");
+    const nuevoRegistro = push(historialRef);
+    set(nuevoRegistro, {
+      teamA: match.teamA.name || "Equipo A",
+      teamB: match.teamB.name || "Equipo B",
+      golesA: match.goalsA,
+      golesB: match.goalsB,
+      timestamp: Date.now(),
+    });
+  }
 
   // Cronómetro
   useEffect(() => {
     if (match.running) {
       ticker.current = setInterval(() => {
-        setMatch(prev => { const n = {...prev, secs: prev.secs+1}; push(n); return n; });
+        setMatch(prev => { const n = {...prev, secs: prev.secs+1}; pushMatch(n); return n; });
       }, 1000);
     } else { clearInterval(ticker.current); }
     return () => clearInterval(ticker.current);
   }, [match.running]);
 
   function update(changes) {
-    setMatch(prev => { const n = {...prev, ...changes}; push(n); return n; });
+    setMatch(prev => { const n = {...prev, ...changes}; pushMatch(n); return n; });
   }
 
   function toast_(msg) {
@@ -214,7 +227,12 @@ export default function AdminView() {
                   ↺ REINICIAR
                 </button>
               </div>
-              <button onClick={() => { clearInterval(ticker.current); update({ running:false, status:"finished" }); toast_("⏹ Partido finalizado"); }} style={{ width:"100%", marginTop:9, border:"1.5px solid rgba(239,68,68,.35)", borderRadius:11, padding:11, background:"rgba(127,29,29,.35)", color:"#fca5a5", fontSize:12, fontWeight:800, cursor:"pointer", letterSpacing:1 }}>
+              <button onClick={() => {
+                clearInterval(ticker.current);
+                guardarEnHistorial();
+                update({ running:false, status:"finished" });
+                toast_("⏹ Partido finalizado");
+              }} style={{ width:"100%", marginTop:9, border:"1.5px solid rgba(239,68,68,.35)", borderRadius:11, padding:11, background:"rgba(127,29,29,.35)", color:"#fca5a5", fontSize:12, fontWeight:800, cursor:"pointer", letterSpacing:1 }}>
                 ⏹ FINALIZAR PARTIDO
               </button>
             </div>
