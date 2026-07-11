@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
-import { ref, set, push } from "firebase/database";
+import { ref, set, push, remove } from "firebase/database";
 
 // ── Helpers ──────────────────────────────
 function pad(n) { return String(n).padStart(2, "0"); }
@@ -71,6 +71,14 @@ export default function AdminView() {
       golesB: match.goalsB,
       timestamp: Date.now(),
     });
+  }
+
+  // Borra todo el historial de partidos (reinicia la tabla de posiciones)
+  function borrarHistorial() {
+    const confirmar = window.confirm("¿Seguro que quieres borrar TODO el historial de partidos? Esto no se puede deshacer.");
+    if (!confirmar) return;
+    remove(ref(db, "historial"));
+    toast_("🗑️ Historial borrado");
   }
 
   // Cronómetro
@@ -234,6 +242,9 @@ export default function AdminView() {
                 toast_("⏹ Partido finalizado");
               }} style={{ width:"100%", marginTop:9, border:"1.5px solid rgba(239,68,68,.35)", borderRadius:11, padding:11, background:"rgba(127,29,29,.35)", color:"#fca5a5", fontSize:12, fontWeight:800, cursor:"pointer", letterSpacing:1 }}>
                 ⏹ FINALIZAR PARTIDO
+              </button>
+              <button onClick={borrarHistorial} style={{ width:"100%", marginTop:9, border:"1px solid rgba(255,255,255,.08)", borderRadius:11, padding:9, background:"rgba(55,65,81,.4)", color:"#9ca3af", fontSize:11, fontWeight:700, cursor:"pointer", letterSpacing:.5 }}>
+                🗑️ Borrar historial (tabla de posiciones)
               </button>
             </div>
 
