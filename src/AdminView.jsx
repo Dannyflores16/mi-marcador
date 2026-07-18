@@ -231,7 +231,7 @@ export default function AdminView() {
                 <button onClick={() => update({ running:false })} disabled={!match.running} style={{ border:"none", borderRadius:11, padding:"12px 6px", fontSize:12, fontWeight:800, cursor:match.running?"pointer":"not-allowed", background:match.running?"#ea580c":"rgba(234,88,12,.2)", color:match.running?"#fff":"#7c2d12", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
                   ⏸ PAUSAR
                 </button>
-                <button onClick={() => { clearInterval(ticker.current); update({ running:false, secs:0 }); }} style={{ border:"1px solid rgba(255,255,255,.08)", borderRadius:11, padding:"12px 6px", fontSize:12, fontWeight:800, cursor:"pointer", background:"rgba(55,65,81,.7)", color:"#d1d5db", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                <button onClick={() => { clearInterval(ticker.current); update({ running:false, secs:0, goalsA:0, goalsB:0, events:[], status:"waiting" }); toast_("🔄 Listo para nuevo partido"); }} style={{ border:"1px solid rgba(255,255,255,.08)", borderRadius:11, padding:"12px 6px", fontSize:12, fontWeight:800, cursor:"pointer", background:"rgba(55,65,81,.7)", color:"#d1d5db", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
                   ↺ REINICIAR
                 </button>
               </div>
