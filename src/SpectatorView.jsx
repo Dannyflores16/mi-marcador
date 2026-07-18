@@ -6,6 +6,8 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase";
 import { ref, onValue, off } from "firebase/database";
+import logoEquipo from "./assets/logo-equipo.jpg";
+import logoUTN from "./assets/logo-utn.jpg";
 
 function pad(n) { return String(n).padStart(2,"0"); }
 function fmt(s) { return `${pad(Math.floor(s/60))}:${pad(s%60)}`; }
@@ -30,6 +32,10 @@ export default function SpectatorView() {
   const [loading, setLoading] = useState(true);
   const [flash,   setFlash]   = useState(null); // "A" | "B" | null
 
+  // ── Tabla de posiciones ───────────────────
+  const [standings,  setStandings]  = useState([]);
+  const [hasHistory, setHasHistory] = useState(true);
+
   useEffect(() => {
     const r = ref(db,"partido");
     onValue(r, snap => {
@@ -45,6 +51,38 @@ export default function SpectatorView() {
       });
     });
     return () => off(r);
+  }, []);
+
+  // Historial → tabla calculada
+  useEffect(() => {
+    const historialRef = ref(db, "historial");
+    const unsub = onValue(historialRef, (snap) => {
+      const data = snap.val();
+      if (!data) { setHasHistory(false); setStandings([]); return; }
+      setHasHistory(true);
+
+      const stats = {};
+      const ensure = (name) => (stats[name] ||= { name, pj:0, g:0, e:0, p:0, gf:0, gc:0 });
+
+      Object.values(data).forEach((m) => {
+        if (!m.teamA || !m.teamB) return;
+        const a = ensure(m.teamA), b = ensure(m.teamB);
+        const golesA = Number(m.golesA || 0), golesB = Number(m.golesB || 0);
+        a.pj++; b.pj++;
+        a.gf += golesA; a.gc += golesB;
+        b.gf += golesB; b.gc += golesA;
+        if (golesA > golesB) { a.g++; b.p++; }
+        else if (golesA < golesB) { b.g++; a.p++; }
+        else { a.e++; b.e++; }
+      });
+
+      const table = Object.values(stats)
+        .map(t => ({ ...t, dif: t.gf - t.gc, pts: t.g*3 + t.e }))
+        .sort((x,y) => y.pts - x.pts || y.dif - x.dif || y.gf - x.gf);
+
+      setStandings(table);
+    });
+    return () => off(historialRef);
   }, []);
 
   // ── Cargando ─────────────────────────────
@@ -173,6 +211,53 @@ export default function SpectatorView() {
                   <span style={{ padding:"3px 9px", borderRadius:7, fontSize:10, fontWeight:800, background:ev.color||"#374151", color:isLight(ev.color||"#374151")?"#000":"#fff" }}>{ev.tag}</span>
                 </div>
               ))}
+          </div>
+
+          {/* ══ TABLA DE POSICIONES ══ */}
+          <div style={{ margin:"7px 11px 20px", background:"rgba(15,23,42,.96)", border:"1px solid rgba(255,255,255,.07)", borderRadius:16, padding:13 }}>
+
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:12 }}>
+              <img src={logoEquipo} alt="Logo del equipo" style={{ height:32, width:32, objectFit:"contain", borderRadius:6 }} />
+              <div style={{ fontSize:10, fontWeight:800, letterSpacing:2, color:"#6b7280", textAlign:"center", flex:1 }}>TABLA DE POSICIONES</div>
+              <img src={logoUTN} alt="Logo UTN" style={{ height:32, width:32, objectFit:"contain", borderRadius:6 }} />
+            </div>
+
+            {!hasHistory ? (
+              <div style={{ fontSize:12, color:"#4b5563", textAlign:"center", padding:14 }}>Aún no hay partidos terminados</div>
+            ) : (
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom:"1px solid rgba(255,255,255,.08)" }}>
+                    {["#","Equipo","PJ","G","E","P","GF","GC","DIF","PTS"].map((h,i) => (
+                      <th key={h} style={{
+                        padding:"8px 4px", fontSize:9, fontWeight:800, letterSpacing:.5,
+                        color:"#6b7280", textAlign: i===1 ? "left" : "center",
+                        paddingLeft: i===1 ? 8 : 4,
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {standings.map((t,i) => (
+                    <tr key={t.name} style={{
+                      borderBottom:"1px solid rgba(255,255,255,.05)",
+                      boxShadow: i===0 ? "inset 3px 0 0 #facc15" : "none",
+                    }}>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{i+1}</td>
+                      <td style={{ padding:"8px 4px 8px 8px", fontSize:11.5, fontWeight:700 }}>{t.name}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.pj}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.g}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.e}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.p}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.gf}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.gc}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11 }}>{t.dif>0?"+"+t.dif:t.dif}</td>
+                      <td style={{ padding:"8px 4px", textAlign:"center", fontSize:11.5, fontWeight:800, color:"#facc15" }}>{t.pts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
         </div>
