@@ -82,7 +82,7 @@ export default function SpectatorView() {
 
       setStandings(table);
     });
-    return () => off(historialRef);
+    return () => unsub();
   }, []);
 
   // ── Cargando ─────────────────────────────
