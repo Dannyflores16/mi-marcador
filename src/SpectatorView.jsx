@@ -6,8 +6,8 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase";
 import { ref, onValue, off } from "firebase/database";
-import logoEquipo from "./assets/logo-equipo.png";
-import logoUTN from "./assets/logo-utn.png";
+import logoEquipo from "./assets/logo-equipo.jpg";
+import logoUTN from "./assets/logo-utn.jpg";
 
 function pad(n) { return String(n).padStart(2,"0"); }
 function fmt(s) { return `${pad(Math.floor(s/60))}:${pad(s%60)}`; }
