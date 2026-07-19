@@ -6,8 +6,8 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebase";
 import { ref, onValue, off } from "firebase/database";
-import logoEquipo from "./assets/logo-equipo.jpg";
-import logoUTN from "./assets/logo-utn.jpg";
+import logoEquipo from "./assets/logo-equipo.png";
+import logoUTN from "./assets/logo-utn.png";
 
 function pad(n) { return String(n).padStart(2,"0"); }
 function fmt(s) { return `${pad(Math.floor(s/60))}:${pad(s%60)}`; }
@@ -67,7 +67,10 @@ export default function SpectatorView() {
       setHasHistory(true);
 
       const stats = {};
-      const ensure = (name) => (stats[name] ||= { name, pj:0, g:0, e:0, p:0, gf:0, gc:0 });
+      const ensure = (name) => {
+        const key = name.trim().toLowerCase();
+        return (stats[key] ||= { name: name.trim(), pj:0, g:0, e:0, p:0, gf:0, gc:0 });
+      };
       const lista = [];
 
       Object.entries(data).forEach(([id, m]) => {
